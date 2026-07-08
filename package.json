@@ -1,0 +1,25 @@
+{
+  "name": "ai-teachers-pet-pro",
+  "version": "2.0.0",
+  "description": "AI Teachers Pet Pro - CAPS-aligned AI-powered web application for South African teachers",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -p 3000",
+    "dev": "npx serve . -p 3000 -l 3000",
+    "build": "echo 'Static site - no build needed'",
+    "serve": "npx serve . -p 3000"
+  },
+  "keywords": [
+    "education",
+    "ai",
+    "teacher",
+    "caps",
+    "south-africa",
+    "roseltjs"
+  ],
+  "author": "Ian Marais",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

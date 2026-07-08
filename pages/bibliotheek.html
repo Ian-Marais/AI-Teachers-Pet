@@ -1,0 +1,154 @@
+<!-- Library Module -->
+<section id="panel-bibliotheek" class="panel" style="padding: var(--sp-2xl); max-width: 1000px; margin: 0 auto;">
+  <div class="card mb-lg">
+    <h2><i class="bi bi-folder"></i> Library - My Saved Content</h2>
+    <p>View, search, and manage all your saved documents from this session.</p>
+    
+    <div style="display: flex; gap: var(--sp-md); margin-top: var(--sp-lg); flex-wrap: wrap;">
+      <input type="text" id="lib-search" class="form-input" placeholder="Search saved items..." style="flex: 1; min-width: 200px;">
+      <select id="lib-filter" class="form-select" style="min-width: 150px;">
+        <option value="">All Types</option>
+        <option value="lesplan">Lesson Plans</option>
+        <option value="werkkaart">Worksheets</option>
+        <option value="vraestel">Question Papers</option>
+        <option value="chat">Chat</option>
+      </select>
+      <button id="lib-clear-btn" class="btn btn-secondary">Clear All</button>
+    </div>
+  </div>
+
+  <div id="lib-list" style="display: grid; gap: var(--sp-lg); grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+    <div class="card" style="text-align: center; padding: var(--sp-2xl); color: var(--txt2);">
+      <i class="bi bi-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+      <p>No saved items yet. Generate content from any module and save it here!</p>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('lib-search');
+  const filterSelect = document.getElementById('lib-filter');
+  const clearBtn = document.getElementById('lib-clear-btn');
+  const libList = document.getElementById('lib-list');
+
+  if (!searchInput) return;
+
+  function renderLibrary() {
+    libList.innerHTML = '';
+    
+    if (STATE.library.length === 0) {
+      libList.innerHTML = `
+        <div class="card" style="text-align: center; padding: var(--sp-2xl); color: var(--txt2); grid-column: 1 / -1;">
+          <i class="bi bi-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+          <p>No saved items yet. Generate content from any module and save it here!</p>
+        </div>
+      `;
+      return;
+    }
+
+    const searchTerm = searchInput.value.toLowerCase();
+    const filterType = filterSelect.value;
+    
+    const filtered = STATE.library.filter(item => {
+      const matchesSearch = item.title.toLowerCase().includes(searchTerm);
+      const matchesFilter = !filterType || item.type === filterType;
+      return matchesSearch && matchesFilter;
+    });
+
+    if (filtered.length === 0) {
+      libList.innerHTML = `
+        <div class="card" style="text-align: center; padding: var(--sp-2xl); color: var(--txt2); grid-column: 1 / -1;">
+          <p>No items match your search or filter.</p>
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div style="display: flex; align-items: start; justify-content: space-between; margin-bottom: var(--sp-md);">
+          <h3 style="margin: 0; flex: 1;">${item.icon} ${esc(item.title)}</h3>
+          <button class="lib-delete-btn btn btn-sm" style="background: #fee; color: #c00; border: 1px solid #c00; padding: 4px 8px;" data-id="${item.id}">✕</button>
+        </div>
+        <p style="margin: 0 0 var(--sp-md) 0; font-size: 12px; color: var(--txt3);">${item.date} at ${item.time}</p>
+        <div style="background: var(--bg); padding: var(--sp-md); border-radius: var(--radius-md); max-height: 150px; overflow-y: auto; font-size: 13px; line-height: 1.6; margin-bottom: var(--sp-md); color: var(--txt2);">
+          ${esc(item.content.substring(0, 300))}...
+        </div>
+        <div style="display: flex; gap: var(--sp-sm);">
+          <button class="lib-view-btn btn btn-sm btn-secondary" data-id="${item.id}" style="flex: 1;">View</button>
+          <button class="lib-copy-btn btn btn-sm btn-secondary" data-id="${item.id}">Copy</button>
+        </div>
+      `;
+      libList.appendChild(card);
+    });
+
+    // Add event listeners
+    document.querySelectorAll('.lib-delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        STATE.library = STATE.library.filter(item => item.id !== parseInt(id));
+        renderLibrary();
+        showToast('Item deleted', 'info');
+      });
+    });
+
+    document.querySelectorAll('.lib-copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const item = STATE.library.find(i => i.id === parseInt(id));
+        if (item) {
+          navigator.clipboard.writeText(item.content);
+          showToast('Copied to clipboard', 'success');
+        }
+      });
+    });
+
+    document.querySelectorAll('.lib-view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const item = STATE.library.find(i => i.id === parseInt(id));
+        if (item) {
+          const modal = document.createElement('div');
+          modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 16px;
+          `;
+          modal.innerHTML = `
+            <div style="background: var(--card); border-radius: var(--radius-lg); padding: var(--sp-lg); max-width: 800px; width: 100%; max-height: 80vh; overflow-y: auto;">
+              <h2 style="margin-top: 0;">${item.icon} ${esc(item.title)}</h2>
+              <div style="white-space: pre-wrap; line-height: 1.6; color: var(--txt); margin-bottom: var(--sp-lg);">${esc(item.content)}</div>
+              <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-primary btn-full">Close</button>
+            </div>
+          `;
+          document.body.appendChild(modal);
+        }
+      });
+    });
+  }
+
+  searchInput.addEventListener('input', renderLibrary);
+  filterSelect.addEventListener('change', renderLibrary);
+  clearBtn.addEventListener('click', () => {
+    if (confirm('Delete all saved items? This cannot be undone.')) {
+      STATE.library = [];
+      renderLibrary();
+      showToast('All items cleared', 'info');
+    }
+  });
+
+  // Initial render
+  renderLibrary();
+});
+</script>

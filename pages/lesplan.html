@@ -1,0 +1,164 @@
+<!-- Lesson Plan Module -->
+<section id="panel-lesplan" class="panel" style="padding: var(--sp-2xl); max-width: 1000px; margin: 0 auto;">
+  <div class="card mb-lg">
+    <h2><i class="bi bi-file-text"></i> Lesson Plan Generator</h2>
+    <p>Create CAPS-aligned lesson plans with objectives, activities, resources, and assessments.</p>
+  </div>
+
+  <div class="card mb-lg">
+    <div class="form-group">
+      <label for="lp-subject">Subject</label>
+      <select id="lp-subject" class="form-select" required>
+        <option value="">Select a subject...</option>
+        <option value="Mathematics">Mathematics</option>
+        <option value="English">English Home Language</option>
+        <option value="Afrikaans">Afrikaans Home Language</option>
+        <option value="isiZulu">isiZulu Home Language</option>
+        <option value="Natural Sciences">Natural Sciences</option>
+        <option value="Social Sciences">Social Sciences</option>
+        <option value="Life Orientation">Life Orientation</option>
+        <option value="Technology">Technology</option>
+        <option value="Arts & Culture">Arts & Culture</option>
+        <option value="Physical Education">Physical Education</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="lp-grade">Grade Level</label>
+      <select id="lp-grade" class="form-select" required>
+        <option value="">Select grade...</option>
+        <option value="R">Grade R (Reception)</option>
+        <option value="1">Grade 1</option>
+        <option value="2">Grade 2</option>
+        <option value="3">Grade 3</option>
+        <option value="4">Grade 4</option>
+        <option value="5">Grade 5</option>
+        <option value="6">Grade 6</option>
+        <option value="7">Grade 7</option>
+        <option value="8">Grade 8</option>
+        <option value="9">Grade 9</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="lp-duration">Duration</label>
+      <select id="lp-duration" class="form-select" required>
+        <option value="">Select duration...</option>
+        <option value="30 minutes">30 minutes</option>
+        <option value="45 minutes">45 minutes</option>
+        <option value="60 minutes">60 minutes</option>
+        <option value="90 minutes">90 minutes</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="lp-topic">Topic/Lesson Title</label>
+      <input type="text" id="lp-topic" class="form-input" placeholder="e.g., Fractions, Photosynthesis, Climate Change" required>
+    </div>
+
+    <div class="form-group">
+      <label for="lp-level">Structure Level</label>
+      <select id="lp-level" class="form-select" required>
+        <option value="">Select level...</option>
+        <option value="Structured">Structured (Detailed)</option>
+        <option value="Moderate">Moderate (Balanced)</option>
+        <option value="Flexible">Flexible (Loose)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="lp-needs">Special Considerations</label>
+      <textarea id="lp-needs" class="form-textarea" placeholder="e.g., Large class, learners with ADHD, limited resources..." style="min-height: 80px;"></textarea>
+    </div>
+
+    <button id="lp-generate-btn" class="btn btn-primary btn-full">
+      <i class="bi bi-sparkles"></i> Generate Lesson Plan
+    </button>
+  </div>
+
+  <div id="lp-result" class="card" style="display: none;">
+    <h3>📋 Generated Lesson Plan</h3>
+    <div id="lp-content" style="line-height: 1.8; font-size: 14px; color: var(--txt); max-height: 600px; overflow-y: auto; padding: var(--sp-md); background: var(--bg); border-radius: var(--radius-md); margin-bottom: var(--sp-lg); white-space: pre-wrap;"></div>
+    
+    <div style="display: flex; gap: var(--sp-md); flex-wrap: wrap;">
+      <button id="lp-copy-btn" class="btn btn-secondary"><i class="bi bi-clipboard"></i> Copy</button>
+      <button id="lp-print-btn" class="btn btn-secondary"><i class="bi bi-printer"></i> Print</button>
+      <button id="lp-save-btn" class="btn btn-secondary"><i class="bi bi-bookmark"></i> Save to Library</button>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const genBtn = document.getElementById('lp-generate-btn');
+  if (!genBtn) return;
+  
+  genBtn.addEventListener('click', async () => {
+    const subject = document.getElementById('lp-subject').value;
+    const grade = document.getElementById('lp-grade').value;
+    const duration = document.getElementById('lp-duration').value;
+    const topic = document.getElementById('lp-topic').value;
+    const level = document.getElementById('lp-level').value;
+    const needs = document.getElementById('lp-needs').value;
+
+    if (!subject || !grade || !duration || !topic || !level) {
+      showToast('Please fill in all required fields', 'error');
+      return;
+    }
+
+    genBtn.disabled = true;
+    genBtn.innerHTML = '<span class="spin"></span> Generating...';
+
+    const prompt = `Create a comprehensive ${duration} CAPS-aligned lesson plan for Grade ${grade} ${subject}.
+
+Topic: ${topic}
+Structure Level: ${level}
+Special Considerations: ${needs || 'None'}
+
+Format the lesson plan with these sections:
+1. LEARNING OBJECTIVES (3-5 CAPS-aligned outcomes)
+2. MATERIALS NEEDED (Resources and equipment)
+3. LESSON INTRODUCTION (Hook/Engagement - 5 min)
+4. DIRECT INSTRUCTION (Teacher-led - 10-15 min)
+5. GUIDED PRACTICE (With learner support)
+6. INDEPENDENT PRACTICE (Learners work alone)
+7. DIFFERENTIATION (For DCAPS, Support, Core, Extended)
+8. FORMATIVE ASSESSMENT (During lesson checks)
+9. HOMEWORK (Task aligned to objectives)
+10. CLOSING (Summary and reflection)
+
+Use clear, practical language suitable for South African teachers.`;
+
+    const response = await callAI(
+      'You are an expert curriculum designer specializing in South African CAPS standards. Create detailed, practical, and engaging lesson plans.',
+      prompt
+    );
+
+    if (response) {
+      document.getElementById('lp-content').textContent = response;
+      document.getElementById('lp-result').style.display = 'block';
+
+      document.getElementById('lp-copy-btn').onclick = () => {
+        navigator.clipboard.writeText(response);
+        showToast('Copied to clipboard', 'success');
+      };
+
+      document.getElementById('lp-print-btn').onclick = () => {
+        window.print();
+      };
+
+      document.getElementById('lp-save-btn').onclick = () => {
+        saveToLibrary({
+          title: `Lesson Plan: ${topic} - Grade ${grade}`,
+          icon: '📋',
+          content: response,
+          type: 'lesplan'
+        });
+      };
+    }
+
+    genBtn.disabled = false;
+    genBtn.innerHTML = '<i class="bi bi-sparkles"></i> Generate Lesson Plan';
+  });
+});
+</script>

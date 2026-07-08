@@ -1,0 +1,376 @@
+// ===== GLOBAL STATE & CONFIGURATION =====
+const APP_CONFIG = {
+  version: '2.0.0',
+  name: 'AI Teachers Pet Pro',
+  apiEndpoint: 'https://api.anthropic.com/v1/messages',
+  apiModel: 'claude-3-5-sonnet-20241022',
+  sessionKey: 'tp_api_key',
+  seenKey: 'tp_seen',
+};
+
+// Global State
+let STATE = {
+  apiKey: '',
+  isConnected: false,
+  library: [],
+  aiCount: 0,
+  docsCount: 0,
+  gamePoints: 0,
+  gameCount: 0,
+  chatHistory: [],
+  currentTheme: 'teal',
+  currentFont: 'jakarta',
+  textSize: 100,
+};
+
+// ===== UTILITY FUNCTIONS =====
+const el = (selector) => document.querySelector(selector);
+const els = (selector) => document.querySelectorAll(selector);
+const esc = (str) => new DOMParser().parseFromString(str, 'text/html').documentElement.textContent;
+
+function showToast(message, type = 'info', duration = 3000) {
+  const container = el('#toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `
+    <span>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+    <span>${message}</span>
+  `;
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, duration);
+}
+
+function loadState() {
+  const savedKey = sessionStorage.getItem(APP_CONFIG.sessionKey);
+  if (savedKey) {
+    STATE.apiKey = savedKey;
+    updateApiStatus();
+  }
+}
+
+function saveApiKey(key) {
+  if (!key || !key.startsWith('sk-ant-')) {
+    showToast('Invalid API key format (must start with sk-ant-)', 'error');
+    return false;
+  }
+  STATE.apiKey = key;
+  sessionStorage.setItem(APP_CONFIG.sessionKey, key);
+  updateApiStatus();
+  showToast('API key saved successfully', 'success');
+  return true;
+}
+
+function clearApiKey() {
+  STATE.apiKey = '';
+  sessionStorage.removeItem(APP_CONFIG.sessionKey);
+  updateApiStatus();
+  showToast('API key cleared', 'info');
+}
+
+function updateApiStatus() {
+  const dot = el('#api-dot');
+  const text = el('#api-text');
+  
+  if (STATE.apiKey) {
+    dot.classList.add('connected');
+    dot.textContent = '●';
+    text.textContent = 'Connected';
+    STATE.isConnected = true;
+    el('#welcome-start-btn').disabled = false;
+  } else {
+    dot.classList.remove('connected');
+    dot.textContent = '●';
+    text.textContent = 'No Key';
+    STATE.isConnected = false;
+    el('#welcome-start-btn').disabled = true;
+  }
+}
+
+// ===== API FUNCTIONS =====
+async function callAI(systemPrompt, userMessage, onStream = null) {
+  if (!STATE.apiKey) {
+    showToast('API key not set. Please enter your Anthropic API key.', 'error');
+    return null;
+  }
+
+  try {
+    const response = await fetch(APP_CONFIG.apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': STATE.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: APP_CONFIG.apiModel,
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }]
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('API Error:', error);
+      showToast(`API Error: ${error.error?.message || 'Unknown error'}`, 'error');
+      return null;
+    }
+
+    const data = await response.json();
+    STATE.aiCount++;
+    return data.content[0].text;
+  } catch (error) {
+    console.error('API Call Error:', error);
+    showToast(`Error: ${error.message}`, 'error');
+    return null;
+  }
+}
+
+// ===== WELCOME SCREEN =====
+function initWelcome() {
+  const overlay = el('#welcome-overlay');
+  const apiKeyInput = el('#welcome-api-key');
+  const startBtn = el('#welcome-start-btn');
+  const skipBtn = el('#welcome-skip-btn');
+
+  // Check if already seen
+  if (localStorage.getItem(APP_CONFIG.seenKey)) {
+    overlay.classList.add('hidden');
+    loadState();
+    return;
+  }
+
+  // API Key input validation
+  apiKeyInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !startBtn.disabled) {
+      startApp();
+    }
+  });
+
+  apiKeyInput.addEventListener('input', (e) => {
+    const isValid = e.target.value.startsWith('sk-ant-') && e.target.value.length > 20;
+    startBtn.disabled = !isValid;
+  });
+
+  startBtn.addEventListener('click', startApp);
+  skipBtn.addEventListener('click', skipWelcome);
+
+  function startApp() {
+    const key = apiKeyInput.value.trim();
+    if (saveApiKey(key)) {
+      localStorage.setItem(APP_CONFIG.seenKey, '1');
+      overlay.classList.add('hidden');
+      initApp();
+    }
+  }
+
+  function skipWelcome() {
+    localStorage.setItem(APP_CONFIG.seenKey, '1');
+    overlay.classList.add('hidden');
+    initApp();
+  }
+}
+
+// ===== NAVIGATION =====
+function initNavigation() {
+  const navButtons = els('.tn');
+  const panels = els('.panel');
+
+  navButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const panelName = btn.dataset.panel;
+      showPanel(panelName, btn);
+    });
+  });
+
+  // Show home by default
+  showPanel('home', navButtons[0]);
+}
+
+function showPanel(panelName, navButton) {
+  // Hide all panels
+  els('.panel').forEach((p) => p.classList.remove('on'));
+  els('.tn').forEach((b) => b.classList.remove('on'));
+
+  // Show selected panel
+  const panel = el(`#panel-${panelName}`);
+  if (panel) {
+    panel.classList.add('on');
+  }
+
+  // Mark nav button as active
+  if (navButton) {
+    navButton.classList.add('on');
+  }
+
+  // Scroll to top
+  el('.body').scrollTop = 0;
+}
+
+// ===== API KEY DROPDOWN =====
+function initApiKeyDropdown() {
+  const mainBtn = el('#api-key-btn-main');
+  const dropdown = el('#api-dropdown');
+  const closeBtn = el('.api-dropdown-close');
+  const input = el('#api-key-input-main');
+  const saveBtn = el('#api-key-save-main');
+  const clearBtn = el('#api-key-clear-main');
+
+  mainBtn.addEventListener('click', () => {
+    const isHidden = dropdown.hasAttribute('hidden');
+    if (isHidden) {
+      dropdown.removeAttribute('hidden');
+      input.value = STATE.apiKey;
+      input.focus();
+      mainBtn.setAttribute('aria-expanded', 'true');
+    } else {
+      dropdown.setAttribute('hidden', '');
+      mainBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  closeBtn.addEventListener('click', () => {
+    dropdown.setAttribute('hidden', '');
+    mainBtn.setAttribute('aria-expanded', 'false');
+  });
+
+  saveBtn.addEventListener('click', () => {
+    if (saveApiKey(input.value.trim())) {
+      dropdown.setAttribute('hidden', '');
+      mainBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    clearApiKey();
+    input.value = '';
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!mainBtn.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.setAttribute('hidden', '');
+      mainBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+// ===== LIBRARY FUNCTIONS =====
+function saveToLibrary(item) {
+  STATE.library.push({
+    id: Date.now(),
+    ...item,
+    date: new Date().toLocaleDateString('af-ZA'),
+    time: new Date().toLocaleTimeString('af-ZA', { hour: '2-digit', minute: '2-digit' }),
+  });
+  STATE.docsCount++;
+  showToast(`Saved to library: ${item.title}`, 'success');
+}
+
+// ===== APP INITIALIZATION =====
+function initApp() {
+  console.log('🚀 AI Teachers Pet Pro v2.0 Initialized');
+  loadState();
+  initNavigation();
+  initApiKeyDropdown();
+  buildHomePanel();
+}
+
+// ===== HOME PANEL =====
+function buildHomePanel() {
+  const html = `
+    <div class="container" style="padding: var(--sp-2xl); max-width: 1200px; margin: 0 auto;">
+      <div class="hero">
+        <div>
+          <h1>Welcome to AI Teacher's Pet Pro</h1>
+          <p>Your CAPS-aligned AI assistant for lesson planning, assessments, and learner tracking.</p>
+        </div>
+        <img src="assets/images/mascot/wolletjie-80.png" alt="Wolletjie mascot" width="80" height="80" style="border-radius: 12px;">
+      </div>
+      
+      <div class="grid grid-cols-3 mt-xl">
+        <div class="card">
+          <h3><i class="bi bi-brain"></i> AI-Powered</h3>
+          <p>Generate lesson plans, questions, and assessments instantly using Claude AI.</p>
+        </div>
+        <div class="card">
+          <h3><i class="bi bi-map"></i> CAPS Aligned</h3>
+          <p>All content tailored to South African curriculum standards and outcomes.</p>
+        </div>
+        <div class="card">
+          <h3><i class="bi bi-shield-check"></i> Private & Secure</h3>
+          <p>Your data stays in your browser. No tracking, no storage on servers.</p>
+        </div>
+      </div>
+
+      <div class="card mt-xl">
+        <h2>📚 Quick Start</h2>
+        <div class="grid grid-cols-2 gap-lg">
+          <div>
+            <h3>For Planning</h3>
+            <ul style="list-style: none; padding: 0;">
+              <li>✓ AI Chat - Ask anything</li>
+              <li>✓ Lesson Plans - CAPS-aligned</li>
+              <li>✓ Worksheets - Differentiated</li>
+              <li>✓ Question Papers - With memos</li>
+            </ul>
+          </div>
+          <div>
+            <h3>For Support</h3>
+            <ul style="list-style: none; padding: 0;">
+              <li>✓ Report Comments - Per learner</li>
+              <li>✓ Parent Letters - WhatsApp ready</li>
+              <li>✓ Ideas Generator - Creative tasks</li>
+              <li>✓ Translations - 12 SA languages</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-xl" style="background: var(--teal-ll); border: 2px solid var(--teal);">
+        <h3 style="color: var(--teal-d);">⚡ Pro Tip</h3>
+        <p>Set your API key in the top-right corner to unlock AI features. Without it, you can still use games, daily messages, and theme customization.</p>
+      </div>
+
+      <div class="grid grid-cols-4 mt-xl gap-md">
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 8px;">21</div>
+          <p style="margin: 0; font-size: 12px; color: var(--txt2);">Modules</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 8px;">8</div>
+          <p style="margin: 0; font-size: 12px; color: var(--txt2);">Themes</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 8px;">12</div>
+          <p style="margin: 0; font-size: 12px; color: var(--txt2);">Languages</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 8px;">∞</div>
+          <p style="margin: 0; font-size: 12px; color: var(--txt2);">Possibilities</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Create panel if it doesn't exist
+  let panel = el('#panel-home');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'panel-home';
+    panel.className = 'panel on';
+    el('.body').appendChild(panel);
+  }
+  panel.innerHTML = html;
+}
+
+// ===== INITIALIZE ON DOCUMENT READY =====
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initWelcome);
+} else {
+  initWelcome();
+}

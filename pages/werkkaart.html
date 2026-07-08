@@ -1,0 +1,161 @@
+<!-- Worksheet Module -->
+<section id="panel-werkkaart" class="panel" style="padding: var(--sp-2xl); max-width: 1000px; margin: 0 auto;">
+  <div class="card mb-lg">
+    <h2><i class="bi bi-file-earmark-text"></i> Worksheet Generator</h2>
+    <p>Create differentiated worksheets with multiple difficulty levels aligned to CAPS.</p>
+  </div>
+
+  <div class="card mb-lg">
+    <div class="form-group">
+      <label for="wk-subject">Subject</label>
+      <select id="wk-subject" class="form-select" required>
+        <option value="">Select a subject...</option>
+        <option value="Mathematics">Mathematics</option>
+        <option value="English">English Home Language</option>
+        <option value="Afrikaans">Afrikaans Home Language</option>
+        <option value="isiZulu">isiZulu Home Language</option>
+        <option value="Natural Sciences">Natural Sciences</option>
+        <option value="Social Sciences">Social Sciences</option>
+        <option value="Life Orientation">Life Orientation</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="wk-grade">Grade Level</label>
+      <select id="wk-grade" class="form-select" required>
+        <option value="">Select grade...</option>
+        <option value="1">Grade 1</option>
+        <option value="2">Grade 2</option>
+        <option value="3">Grade 3</option>
+        <option value="4">Grade 4</option>
+        <option value="5">Grade 5</option>
+        <option value="6">Grade 6</option>
+        <option value="7">Grade 7</option>
+        <option value="8">Grade 8</option>
+        <option value="9">Grade 9</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="wk-topic">Topic</label>
+      <input type="text" id="wk-topic" class="form-input" placeholder="e.g., Fractions, Photosynthesis, Colonial History" required>
+    </div>
+
+    <div class="form-group">
+      <label for="wk-diff">Differentiation Level</label>
+      <select id="wk-diff" class="form-select" required>
+        <option value="">Select level...</option>
+        <option value="All levels">All Levels (DCAPS + Support + Core + Extended)</option>
+        <option value="DCAPS">DCAPS/Foundation (Severe difficulties)</option>
+        <option value="Support">Support (Below grade level)</option>
+        <option value="Core">Core (Grade level)</option>
+        <option value="Extended">Extended (Above grade level)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="wk-focus">Specific Focus (Optional)</label>
+      <textarea id="wk-focus" class="form-textarea" placeholder="Any specific learning areas or common misconceptions to address?" style="min-height: 80px;"></textarea>
+    </div>
+
+    <button id="wk-generate-btn" class="btn btn-primary btn-full">
+      <i class="bi bi-sparkles"></i> Generate Worksheet
+    </button>
+  </div>
+
+  <div id="wk-result" class="card" style="display: none;">
+    <h3>📝 Generated Worksheet</h3>
+    <div id="wk-content" style="line-height: 1.8; font-size: 14px; color: var(--txt); max-height: 600px; overflow-y: auto; padding: var(--sp-md); background: var(--bg); border-radius: var(--radius-md); margin-bottom: var(--sp-lg); white-space: pre-wrap;"></div>
+    
+    <div style="display: flex; gap: var(--sp-md); flex-wrap: wrap;">
+      <button id="wk-copy-btn" class="btn btn-secondary"><i class="bi bi-clipboard"></i> Copy</button>
+      <button id="wk-print-btn" class="btn btn-secondary"><i class="bi bi-printer"></i> Print</button>
+      <button id="wk-save-btn" class="btn btn-secondary"><i class="bi bi-bookmark"></i> Save to Library</button>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const genBtn = document.getElementById('wk-generate-btn');
+  if (!genBtn) return;
+  
+  genBtn.addEventListener('click', async () => {
+    const subject = document.getElementById('wk-subject').value;
+    const grade = document.getElementById('wk-grade').value;
+    const topic = document.getElementById('wk-topic').value;
+    const diff = document.getElementById('wk-diff').value;
+    const focus = document.getElementById('wk-focus').value;
+
+    if (!subject || !grade || !topic || !diff) {
+      showToast('Please fill in all required fields', 'error');
+      return;
+    }
+
+    genBtn.disabled = true;
+    genBtn.innerHTML = '<span class="spin"></span> Generating...';
+
+    const prompt = `Create a print-ready worksheet for Grade ${grade} ${subject} on the topic: ${topic}
+
+Differentiation Level: ${diff}
+Additional Focus: ${focus || 'None'}
+
+Format the worksheet as follows:
+SECTION A: MULTIPLE CHOICE (5 questions, progressive difficulty)
+- Question
+- A) Option
+- B) Option  
+- C) Option
+- D) Option
+
+SECTION B: FILL IN THE BLANKS (5-8 questions)
+- Sentence with blank(s)
+
+SECTION C: SHORT ANSWERS (4 questions)
+- Question prompt
+
+SECTION D: EXTENDED/CREATIVE TASK
+- Task description
+
+Include:
+- Learner name, grade, date, and total marks at the top
+- Clear instructions for each section
+- Appropriate difficulty based on differentiation level
+- Real-world application where possible
+- Answer key hidden at the bottom (label as MEMO)
+
+Use simple, clear language appropriate for Grade ${grade}.`;
+
+    const response = await callAI(
+      'You are an expert educational content creator specializing in differentiated South African worksheets. Create clear, engaging, print-ready worksheets.',
+      prompt
+    );
+
+    if (response) {
+      document.getElementById('wk-content').textContent = response;
+      document.getElementById('wk-result').style.display = 'block';
+
+      document.getElementById('wk-copy-btn').onclick = () => {
+        navigator.clipboard.writeText(response);
+        showToast('Copied to clipboard', 'success');
+      };
+
+      document.getElementById('wk-print-btn').onclick = () => {
+        window.print();
+      };
+
+      document.getElementById('wk-save-btn').onclick = () => {
+        saveToLibrary({
+          title: `Worksheet: ${topic} - Grade ${grade} (${diff})`,
+          icon: '📝',
+          content: response,
+          type: 'werkkaart'
+        });
+      };
+    }
+
+    genBtn.disabled = false;
+    genBtn.innerHTML = '<i class="bi bi-sparkles"></i> Generate Worksheet';
+  });
+});
+</script>

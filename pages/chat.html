@@ -1,0 +1,126 @@
+<!-- AI Chat Module -->
+<section id="panel-chat" class="panel" style="padding: var(--sp-2xl); max-width: 900px; margin: 0 auto;">
+  <div class="card mb-lg">
+    <h2><i class="bi bi-chat-dots"></i> AI Chat Assistant</h2>
+    <p>Ask the AI anything about teaching, curriculum, lesson planning, or any topic. Multi-turn conversations supported.</p>
+  </div>
+
+  <div class="card mb-lg" style="display: grid; gap: var(--sp-md); max-height: 400px; overflow-y: auto; background: var(--bg2);">
+    <div id="chat-messages" style="display: flex; flex-direction: column; gap: var(--sp-md);">
+      <div class="chat-msg user">
+        <p style="margin: 0; padding: var(--sp-md); background: var(--teal); color: white; border-radius: var(--radius-md);">Start a conversation...</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="form-group">
+      <label for="chat-input">Your Question:</label>
+      <textarea id="chat-input" class="form-textarea" placeholder="Ask anything... (Shift+Enter for new line)" style="resize: vertical; min-height: 80px;"></textarea>
+      <div style="font-size: 12px; color: var(--txt3); margin-top: 4px;">Tip: Press Enter to send, Shift+Enter for new line</div>
+    </div>
+    
+    <div style="display: flex; gap: var(--sp-md);">
+      <button id="chat-send-btn" class="btn btn-primary" style="flex: 1;">
+        <i class="bi bi-send"></i> Send
+      </button>
+      <button id="chat-clear-btn" class="btn btn-secondary">
+        <i class="bi bi-arrow-clockwise"></i> Clear
+      </button>
+      <button id="chat-save-btn" class="btn btn-secondary">
+        <i class="bi bi-bookmark"></i> Save
+      </button>
+    </div>
+  </div>
+
+  <div class="card mt-lg">
+    <h3>💡 Quick Prompts</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-md);">
+      <button class="quick-prompt btn btn-secondary" data-prompt="Create a 5-minute ice-breaker activity for Grade 4 Mathematics">Ice-breaker Activity</button>
+      <button class="quick-prompt btn btn-secondary" data-prompt="What are effective strategies for managing a large class?">Class Management</button>
+      <button class="quick-prompt btn btn-secondary" data-prompt="Explain photosynthesis in simple terms for Grade 5">Explain Concepts</button>
+      <button class="quick-prompt btn btn-secondary" data-prompt="How can I incorporate technology in my lessons?">Tech Integration</button>
+      <button class="quick-prompt btn btn-secondary" data-prompt="Create motivational quotes for struggling learners">Motivation Ideas</button>
+      <button class="quick-prompt btn btn-secondary" data-prompt="Tips for inclusive teaching practices">Inclusive Teaching</button>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const chatInput = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send-btn');
+  const clearBtn = document.getElementById('chat-clear-btn');
+  const saveBtn = document.getElementById('chat-save-btn');
+  const messagesDiv = document.getElementById('chat-messages');
+  
+  if (!sendBtn) return; // Exit if not on chat page
+  
+  sendBtn.addEventListener('click', async () => {
+    const message = chatInput.value.trim();
+    if (!message) return;
+    
+    // Add user message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'chat-msg';
+    userMsg.innerHTML = `<p style="margin: 0; padding: var(--sp-md); background: var(--teal); color: white; border-radius: var(--radius-md);">${esc(message)}</p>`;
+    messagesDiv.appendChild(userMsg);
+    chatInput.value = '';
+    
+    // Show typing indicator
+    const typingMsg = document.createElement('div');
+    typingMsg.className = 'chat-msg ai';
+    typingMsg.innerHTML = `<p style="margin: 0; padding: var(--sp-md); background: var(--bg); color: var(--txt); border-radius: var(--radius-md);"><span class="spin" style="display: inline-block; width: 12px; height: 12px; border: 2px solid var(--teal-l); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.8s linear infinite;"></span> Thinking...</p>`;
+    messagesDiv.appendChild(typingMsg);
+    messagesDiv.parentElement.scrollTop = messagesDiv.parentElement.scrollHeight;
+    
+    // Call AI
+    const response = await callAI(
+      'You are a helpful, friendly AI teaching assistant for South African educators. Provide clear, practical advice based on CAPS curriculum. Be warm, professional, and supportive.',
+      message
+    );
+    
+    if (response) {
+      typingMsg.innerHTML = `<p style="margin: 0; padding: var(--sp-md); background: var(--bg); color: var(--txt); border-radius: var(--radius-md);">${response.replace(/\n/g, '<br>')}</p>`;
+      STATE.chatHistory.push({ role: 'user', content: message });
+      STATE.chatHistory.push({ role: 'assistant', content: response });
+    } else {
+      typingMsg.innerHTML = `<p style="margin: 0; padding: var(--sp-md); background: #fee; color: #c00; border-radius: var(--radius-md);">Error getting response. Check your API key.</p>`;
+    }
+    
+    messagesDiv.parentElement.scrollTop = messagesDiv.parentElement.scrollHeight;
+  });
+  
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+  
+  clearBtn.addEventListener('click', () => {
+    messagesDiv.innerHTML = `<div class="chat-msg user"><p style="margin: 0; padding: var(--sp-md); background: var(--teal); color: white; border-radius: var(--radius-md);">Conversation cleared</p></div>`;
+    STATE.chatHistory = [];
+  });
+  
+  saveBtn.addEventListener('click', () => {
+    if (STATE.chatHistory.length > 0) {
+      saveToLibrary({
+        title: `Chat - ${new Date().toLocaleDateString()}`,
+        icon: '💬',
+        content: STATE.chatHistory.map(m => `${m.role}: ${m.content}`).join('\n\n'),
+        type: 'chat'
+      });
+    }
+  });
+  
+  // Quick prompts
+  document.querySelectorAll('.quick-prompt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      chatInput.value = btn.dataset.prompt;
+      chatInput.focus();
+      sendBtn.click();
+    });
+  });
+});
+</script>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI Teachers Pet Pro - CAPS-aligned AI-powered web application for South African teachers">
+  <meta name="theme-color" content="#0D9488">
+  <title>AI Teachers Pet Pro</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Roselt.js -->
+  <script src="https://cdn.jsdelivr.net/gh/ShaunRoselt/Roselt.js@main/dist/roselt.js"></script>
+  
+  <!-- Main Styles -->
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <!-- Welcome Overlay (First Visit) -->
+  <div id="welcome-overlay" class="welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+    <div class="welcome-card">
+      <div class="welcome-mascot" aria-hidden="true">
+        <img src="assets/images/mascot/wolletjie-180.png" alt="Wolletjie - AI Teachers Pet Mascot" width="180" height="180">
+      </div>
+      <h1 id="welcome-title">AI Teacher's Pet Pro</h1>
+      <p class="welcome-subtitle">CAPS-aligned AI Assistant for SA Teachers</p>
+      
+      <div class="welcome-instructions">
+        <div class="instruction-item">
+          <span class="instruction-icon">🔑</span>
+          <span>Enter your Anthropic API key below</span>
+        </div>
+        <div class="instruction-item">
+          <span class="instruction-icon">🌐</span>
+          <span>Internet required for AI features</span>
+        </div>
+        <div class="instruction-item">
+          <span class="instruction-icon">📱</span>
+          <span>Works offline for games & tools</span>
+        </div>
+      </div>
+      
+      <div class="api-input-wrapper">
+        <label for="welcome-api-key" class="visually-hidden">Anthropic API Key</label>
+        <input 
+          type="password" 
+          id="welcome-api-key" 
+          class="api-input" 
+          placeholder="sk-ant-..." 
+          autocomplete="off"
+          aria-describedby="api-key-help"
+        >
+        <div id="api-key-help" class="api-key-help">Get a free key at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a></div>
+      </div>
+      
+      <button id="welcome-start-btn" class="btn btn-primary btn-full btn-lg" disabled>
+        <span class="btn-text">🚀 Start Now!</span>
+        <span class="btn-loader" hidden><span class="spin"></span></span>
+      </button>
+      
+      <div class="welcome-secondary-actions">
+        <a href="https://console.anthropic.com" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Get Free Key</a>
+        <button id="welcome-skip-btn" class="btn btn-ghost btn-sm">View App →</button>
+      </div>
+      
+      <div class="welcome-badges">
+        <span class="badge-teal">CAPS SA</span>
+        <span class="badge-teal">Gr R-9</span>
+        <span class="badge-teal">Afrikaans</span>
+        <span class="badge-teal">32 Modules</span>
+      </div>
+      
+      <p class="privacy-note">Your API key is NEVER stored — only kept in browser memory</p>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div class="app" id="app">
+    <!-- Top Bar -->
+    <header class="topbar" role="banner">
+      <div class="logo-mark" aria-hidden="true">
+        <img src="assets/images/mascot/wolletjie-40.png" alt="" width="40" height="40">
+      </div>
+      <div class="logo-text">Teacher's Pet Pro v2.0</div>
+      
+      <nav class="top-nav" role="navigation" aria-label="Main navigation">
+        <button class="tn" data-panel="home" aria-label="Home"><i class="bi bi-house"></i><span>Home</span></button>
+        <button class="tn" data-panel="chat" aria-label="AI Chat"><i class="bi bi-chat-dots"></i><span>AI Chat</span></button>
+        <button class="tn" data-panel="lesplan" aria-label="Lesson Plan"><i class="bi bi-file-text"></i><span>Lesson Plan</span></button>
+        <button class="tn" data-panel="werkkaart" aria-label="Worksheet"><i class="bi bi-file-earmark-text"></i><span>Worksheet</span></button>
+        <button class="tn" data-panel="vraestel" aria-label="Question Paper"><i class="bi bi-check2-square"></i><span>Question Paper</span></button>
+        <button class="tn" data-panel="rapport" aria-label="Reports"><i class="bi bi-chat-text"></i><span>Reports</span></button>
+        <button class="tn" data-panel="ouer" aria-label="Parents"><i class="bi bi-envelope"></i><span>Parents</span></button>
+        <button class="tn" data-panel="aanbieding" aria-label="Presentation"><i class="bi bi-presentation"></i><span>Presentation</span></button>
+        <button class="tn" data-panel="idees" aria-label="Ideas"><i class="bi bi-lightbulb"></i><span>Ideas</span></button>
+        <button class="tn" data-panel="storie" aria-label="Storybook"><i class="bi bi-book"></i><span>Storybook</span></button>
+        <button class="tn" data-panel="lied" aria-label="Song"><i class="bi bi-music-note"></i><span>Song</span></button>
+        <button class="tn" data-panel="vertaling" aria-label="Translation"><i class="bi bi-translate"></i><span>Translation</span></button>
+        <button class="tn" data-panel="kahoot" aria-label="Kahoot Quiz"><i class="bi bi-controller"></i><span>Kahoot</span></button>
+        <button class="tn" data-panel="worldchat" aria-label="World Chat"><i class="bi bi-globe"></i><span>World Chat</span></button>
+        <button class="tn" data-panel="deelhub" aria-label="Share Hub"><i class="bi bi-share"></i><span>Share Hub</span></button>
+        <button class="tn" data-panel="bibliotheek" aria-label="Library"><i class="bi bi-folder"></i><span>Library</span></button>
+        <button class="tn" data-panel="ontspan" aria-label="Relax"><i class="bi bi-joystick"></i><span>Relax</span></button>
+        <button class="tn" data-panel="groei" aria-label="Growth"><i class="bi bi-graph-up"></i><span>Growth</span></button>
+        <button class="tn" data-panel="dagboodskap" aria-label="Daily Message"><i class="bi bi-sun"></i><span>Daily Msg</span></button>
+        <button class="tn" data-panel="temas" aria-label="Themes"><i class="bi bi-palette"></i><span>Themes</span></button>
+        <button class="tn" data-panel="dagboek" aria-label="Journal"><i class="bi bi-journal"></i><span>Journal</span></button>
+      </nav>
+      
+      <div class="top-right">
+        <div class="api-status" aria-live="polite">
+          <span class="api-dot" id="api-dot"></span>
+          <span class="api-text" id="api-text">No Key</span>
+        </div>
+        <div class="api-input-wrap">
+          <button id="api-key-btn-main" class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="api-dropdown" aria-label="API Key Settings">
+            <i class="bi bi-key"></i> API Key
+          </button>
+          <div id="api-dropdown" class="api-dropdown" role="menu" hidden>
+            <div class="api-dropdown-header">
+              <strong>Anthropic API Key</strong>
+              <button class="api-dropdown-close" aria-label="Close">&times;</button>
+            </div>
+            <p class="api-dropdown-desc">Enter your <code>sk-ant-...</code> key to enable AI features.</p>
+            <label for="api-key-input-main" class="visually-hidden">API Key</label>
+            <input type="password" id="api-key-input-main" class="api-input" placeholder="sk-ant-..." autocomplete="off">
+            <div class="api-dropdown-actions">
+              <button id="api-key-save-main" class="btn btn-primary btn-sm">Save</button>
+              <button id="api-key-clear-main" class="btn btn-secondary btn-sm">Clear</button>
+            </div>
+            <a href="https://console.anthropic.com" target="_blank" rel="noopener" class="api-dropdown-link">Get free key →</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="body" role="main">
+      <!-- Roselt.js Router -->
+      <roselt page="home" navigate></roselt>
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Main App Script -->
+  <script src="app.js"></script>
+  
+  <!-- Initialize Roselt -->
+  <script>
+    Roselt.start();
+  </script>
+</body>
+</html>

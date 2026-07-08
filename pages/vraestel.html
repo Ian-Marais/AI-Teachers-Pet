@@ -1,0 +1,161 @@
+<!-- Question Paper + Memo Module -->
+<section id="panel-vraestel" class="panel" style="padding: var(--sp-2xl); max-width: 1000px; margin: 0 auto;">
+  <div class="card mb-lg">
+    <h2><i class="bi bi-check2-square"></i> Question Paper & Memo Generator</h2>
+    <p>Create comprehensive question papers with model answers and marking memos.</p>
+  </div>
+
+  <div class="card mb-lg">
+    <div class="form-group">
+      <label for="vr-subject">Subject</label>
+      <select id="vr-subject" class="form-select" required>
+        <option value="">Select a subject...</option>
+        <option value="Mathematics">Mathematics</option>
+        <option value="English">English Home Language</option>
+        <option value="Afrikaans">Afrikaans Home Language</option>
+        <option value="isiZulu">isiZulu Home Language</option>
+        <option value="Natural Sciences">Natural Sciences</option>
+        <option value="Social Sciences">Social Sciences</option>
+        <option value="Life Orientation">Life Orientation</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="vr-grade">Grade Level</label>
+      <select id="vr-grade" class="form-select" required>
+        <option value="">Select grade...</option>
+        <option value="4">Grade 4</option>
+        <option value="5">Grade 5</option>
+        <option value="6">Grade 6</option>
+        <option value="7">Grade 7</option>
+        <option value="8">Grade 8</option>
+        <option value="9">Grade 9</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="vr-topics">Topics Covered (comma-separated)</label>
+      <textarea id="vr-topics" class="form-textarea" placeholder="e.g., Fractions, Decimals, Percentages" required style="min-height: 60px;"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="vr-marks">Total Marks</label>
+      <select id="vr-marks" class="form-select" required>
+        <option value="">Select total marks...</option>
+        <option value="25">25 marks</option>
+        <option value="50">50 marks</option>
+        <option value="75">75 marks</option>
+        <option value="100">100 marks</option>
+        <option value="150">150 marks</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="vr-duration">Exam Duration</label>
+      <select id="vr-duration" class="form-select" required>
+        <option value="">Select duration...</option>
+        <option value="30 minutes">30 minutes</option>
+        <option value="60 minutes">60 minutes</option>
+        <option value="90 minutes">90 minutes</option>
+        <option value="120 minutes">120 minutes</option>
+      </select>
+    </div>
+
+    <button id="vr-generate-btn" class="btn btn-primary btn-full">
+      <i class="bi bi-sparkles"></i> Generate Question Paper & Memo
+    </button>
+  </div>
+
+  <div id="vr-result" class="card" style="display: none;">
+    <h3>✅ Question Paper & Memorandum</h3>
+    <div id="vr-content" style="line-height: 1.8; font-size: 14px; color: var(--txt); max-height: 600px; overflow-y: auto; padding: var(--sp-md); background: var(--bg); border-radius: var(--radius-md); margin-bottom: var(--sp-lg); white-space: pre-wrap;"></div>
+    
+    <div style="display: flex; gap: var(--sp-md); flex-wrap: wrap;">
+      <button id="vr-copy-btn" class="btn btn-secondary"><i class="bi bi-clipboard"></i> Copy</button>
+      <button id="vr-print-btn" class="btn btn-secondary"><i class="bi bi-printer"></i> Print</button>
+      <button id="vr-save-btn" class="btn btn-secondary"><i class="bi bi-bookmark"></i> Save to Library</button>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const genBtn = document.getElementById('vr-generate-btn');
+  if (!genBtn) return;
+  
+  genBtn.addEventListener('click', async () => {
+    const subject = document.getElementById('vr-subject').value;
+    const grade = document.getElementById('vr-grade').value;
+    const topics = document.getElementById('vr-topics').value;
+    const marks = document.getElementById('vr-marks').value;
+    const duration = document.getElementById('vr-duration').value;
+
+    if (!subject || !grade || !topics || !marks || !duration) {
+      showToast('Please fill in all required fields', 'error');
+      return;
+    }
+
+    genBtn.disabled = true;
+    genBtn.innerHTML = '<span class="spin"></span> Generating...';
+
+    const prompt = `Create a professional question paper and memorandum for Grade ${grade} ${subject}.
+
+Topics: ${topics}
+Total Marks: ${marks}
+Duration: ${duration}
+
+PART 1: QUESTION PAPER
+Format:
+- Professional header with school name, subject, grade, marks, duration
+- General instructions for learners
+- SECTION A: MULTIPLE CHOICE (5-8 questions, 1-2 marks each)
+- SECTION B: SHORT ANSWER QUESTIONS (4-6 questions, 2-3 marks each)
+- SECTION C: EXTENDED RESPONSE (2-3 questions, 5-8 marks each)
+
+PART 2: MEMORANDUM
+- Model answers for all questions
+- Mark allocation for each question
+- Alternative correct answers where applicable
+- Assessment rubric for extended response questions
+- Bloom's Taxonomy levels indicated
+
+Ensure:
+- Questions test different cognitive levels (Bloom's taxonomy)
+- Content is CAPS-aligned for Grade ${grade}
+- Questions are clear and unambiguous
+- Variety of question types
+- Total marks match ${marks}`;
+
+    const response = await callAI(
+      'You are an expert examiner creating professional South African examination papers. Ensure academic rigor and fair assessment.',
+      prompt
+    );
+
+    if (response) {
+      document.getElementById('vr-content').textContent = response;
+      document.getElementById('vr-result').style.display = 'block';
+
+      document.getElementById('vr-copy-btn').onclick = () => {
+        navigator.clipboard.writeText(response);
+        showToast('Copied to clipboard', 'success');
+      };
+
+      document.getElementById('vr-print-btn').onclick = () => {
+        window.print();
+      };
+
+      document.getElementById('vr-save-btn').onclick = () => {
+        saveToLibrary({
+          title: `Question Paper & Memo: ${subject} - Grade ${grade}`,
+          icon: '✅',
+          content: response,
+          type: 'vraestel'
+        });
+      };
+    }
+
+    genBtn.disabled = false;
+    genBtn.innerHTML = '<i class="bi bi-sparkles"></i> Generate Question Paper & Memo';
+  });
+});
+</script>
