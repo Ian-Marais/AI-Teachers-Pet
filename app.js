@@ -318,7 +318,6 @@ function initApp() {
   loadState();
   initNavigation();
   initApiKeyDropdown();
-  buildHomePanel();
 }
 
 // ===== HOME PANEL =====
