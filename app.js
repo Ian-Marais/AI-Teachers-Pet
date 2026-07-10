@@ -332,21 +332,6 @@ function buildHomePanel() {
         </div>
         <img src="assets/images/mascot/wolletjie-80.png" alt="Wolletjie mascot" width="80" height="80" style="border-radius: 12px;">
       </div>
-      
-      <div class="grid grid-cols-3 mt-xl">
-        <div class="card">
-          <h3><i class="bi bi-brain"></i> AI-Powered</h3>
-          <p>Generate lesson plans, questions, and assessments instantly using Claude AI.</p>
-        </div>
-        <div class="card">
-          <h3><i class="bi bi-map"></i> CAPS Aligned</h3>
-          <p>All content tailored to South African curriculum standards and outcomes.</p>
-        </div>
-        <div class="card">
-          <h3><i class="bi bi-shield-check"></i> Private & Secure</h3>
-          <p>Your data stays in your browser. No tracking, no storage on servers.</p>
-        </div>
-      </div>
 
       <div class="card mt-xl">
         <h2>📚 Quick Start</h2>
