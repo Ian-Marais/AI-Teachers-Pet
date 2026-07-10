@@ -137,10 +137,16 @@ function initWelcome() {
   const startBtn = el('#welcome-start-btn');
   const skipBtn = el('#welcome-skip-btn');
 
+  // Auto-skip welcome for external access (not localhost)
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    localStorage.setItem(APP_CONFIG.seenKey, '1');
+  }
+
   // Check if already seen
   if (localStorage.getItem(APP_CONFIG.seenKey)) {
     overlay.classList.add('hidden');
     loadState();
+    initApp();
     return;
   }
 

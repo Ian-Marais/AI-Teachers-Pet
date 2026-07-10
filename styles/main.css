@@ -133,7 +133,9 @@ code {
 }
 
 .welcome-overlay.hidden {
-  display: none;
+  display: none !important;
+  pointer-events: none;
+  visibility: hidden;
   animation: fadeOut 0.4s ease;
 }
 
