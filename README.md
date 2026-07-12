@@ -559,7 +559,7 @@ A: From the Journal module, use browser's print function or copy entries manuall
 
 ## 👨‍💻 Development Team
 
-Built with ❤️ for South African educators by [Ian Marais]
+Built by [Ian Marais]
 
 **Version**: 2.0.0
 **Last Updated**: 2024
@@ -571,4 +571,3 @@ Built with ❤️ for South African educators by [Ian Marais]
 
 For bugs, feature requests, or general feedback, please open an issue or contact support.
 
-**Made with passion for South African Teachers ✨**
